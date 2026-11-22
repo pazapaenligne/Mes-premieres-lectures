@@ -746,28 +746,32 @@ function ecranMachine(){
   var bSuiv = bouton("btn btn-jaune", T.suivant, function(){ if(!resolu) return; bSuiv.disabled = true; bNiv.disabled = true; allerSuivant(); });
   var bNiv = bouton("btn btn-bleu", T.niveauSuivant, function(){ bSuiv.disabled = true; bNiv.disabled = true; ecranNiveau(E.jeu, E.niv+1); });
   /* v42 : après une erreur, les morceaux posés restent visibles ; c'est l'enfant qui les enlève (« Je recommence » ou en touchant une place) */
-  var bRec = bouton("btn btn-jaune", "↺ Je recommence", function(){
+  /* v52 : plus de vérification automatique. « Je vérifie » n'est actif que lorsque les deux places sont remplies ; le jeu ne vérifie qu'au clic. */
+  var bVer = bouton("btn btn-jaune", "Je vérifie", function(){ if(verrou || resolu || rempli.indexOf(null)>=0) return; verifier(); });
+  function majVer(){ bVer.disabled = verrou || rempli.indexOf(null)>=0; if(!bVer.disabled && !bVer.hidden){ try{ bVer.scrollIntoView({ block: "nearest" }); }catch(e){} } }
+  var bRec = bouton("btn btn-jaune", "↺ Je réessaie", function(){
     if(verrou || resolu) return;
     rempli.forEach(function(k, p){ if(k!==null){ tuiles[k].disabled = false; cases[p].textContent = ""; cases[p].classList.remove("plein"); } });
-    rempli = [null, null]; bRec.hidden = true; retour.className = "retour"; retour.textContent = "";
+    rempli = [null, null]; bRec.hidden = true; retour.className = "retour"; retour.textContent = ""; bVer.hidden = false; majVer();
   });
   /* v49 : « Écoute et essaie encore. » n'est affiché que si l'enfant peut réellement écouter le mot.
      Niveaux sans aide : le haut-parleur du mot n'apparaît qu'APRÈS une erreur, si l'enregistrement existe. L'écoute est une aide : elle ne compte pas comme réussite sans aide. */
   var aModele = !!(W.audio && AUD[W.audio]);
   var bEc = (!N.aide && aModele) ? bouton("btn btn-bleu", T.ecouterMot, function(){ if(verrou || resolu) return; aide = true; occupe(true); jouer([pMot(mot, bEc)]).then(function(){ occupe(false); }); }) : null;
   bSuiv.hidden = true; bNiv.hidden = true; bRec.hidden = true; if(bEc) bEc.hidden = true; if(bAide) bAide.hidden = true;   /* v50 : au niveau 1 aussi, le haut-parleur du mot n'apparaît qu'après une erreur */
-  [bAide, bEc, bRec, bSuiv, bNiv].forEach(function(b){ if(b) actions.appendChild(b); });
-  function occupe(oui){ verrou = oui; if(bAide) bAide.disabled = oui; if(bEc) bEc.disabled = oui; cb.bouton.disabled = oui; bRec.disabled = oui; }
+  [bVer, bAide, bEc, bRec, bSuiv, bNiv].forEach(function(b){ if(b) actions.appendChild(b); });
+  function occupe(oui){ verrou = oui; if(bAide) bAide.disabled = oui; if(bEc) bEc.disabled = oui; cb.bouton.disabled = oui; bRec.disabled = oui; majVer(); }
+  majVer();
   function poser(k){
     if(verrou || resolu || rempli.indexOf(k)>=0) return;
     var p = rempli.indexOf(null); if(p<0) return;
     rempli[p] = k; cases[p].textContent = W.syl[k]; cases[p].classList.add("plein"); tuiles[k].disabled = true;
-    if(rempli.indexOf(null)<0) verifier();
+    majVer();   /* v52 : le mot formé reste affiché ; rien n'est vérifié avant « Je vérifie » */
   }
   function retirer(p){
     if(verrou || resolu || rempli[p]===null) return;
     var k = rempli[p]; rempli[p] = null; cases[p].textContent = ""; cases[p].classList.remove("plein"); tuiles[k].disabled = false;
-    bRec.hidden = true; retour.className = "retour"; retour.textContent = "";
+    bRec.hidden = true; retour.className = "retour"; retour.textContent = ""; bVer.hidden = false; majVer();
   }
   function verifier(){
     var mot2 = rempli.map(function(k){ return W.syl[k]; }).join("");
@@ -775,13 +779,13 @@ function ecranMachine(){
       resolu = true; cases.forEach(function(c){ c.classList.add("ok"); c.disabled = true; });
       retour.className = "retour bien"; retour.textContent = "★ " + W.texte;   /* v34 : la phrase dite est ajoutée ci-dessous */
       suiteNiveau(retour, bSuiv, bNiv, erreurs===0 && !aide);
-      if(bAide) bAide.hidden = true; if(bEc) bEc.hidden = true; bRec.hidden = true;
+      if(bAide) bAide.hidden = true; if(bEc) bEc.hidden = true; bRec.hidden = true; bVer.hidden = true;
       var ph = retourBon(false, (E.idx >= N.items.length-1) ? ["ok_bravo.mp3","ok_super.mp3",null][E.niv] : null);   /* v42 : félicitation dite à chaque réussite, dernière manche comprise, sans redire le mot qui ouvre l'audio de fin */ if(ph && retour.firstChild) retour.firstChild.nodeValue += " — " + ph;   /* v40 : dernière manche = silence avant l'audio de fin */
       bSuiv.hidden = false; try{ bSuiv.focus({ preventScroll: true }); }catch(e){ bSuiv.focus(); }
       try{ actions.scrollIntoView({ block: "nearest" }); }catch(e){}
     } else {
       erreurs++;
-      retour.className = "retour aide"; bRec.hidden = false;
+      retour.className = "retour aide"; bRec.hidden = false; bVer.hidden = true;
       if((N.aide && aModele) || bEc){
         occupe(true); retour.textContent = T.presque; if(bEc) bEc.hidden = false; if(bAide) bAide.hidden = false;
         jouer([pCons("presque")]).then(function(){ occupe(false); });   /* v42 : rien ne s'efface tout seul */
