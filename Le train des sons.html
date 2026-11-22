@@ -168,6 +168,8 @@ img.portrait,.opt img.portrait,.mot-carte img.portrait,img.cible-img.portrait{bo
 .couv .act{font-size:clamp(20px,4.5vw,26px);font-weight:bold;margin:2px 0 6px}
 @media (max-height:720px){.couv img{width:min(260px,56%)}}
 @media (max-height:600px){.couv img{width:min(230px,50%)}}
+.retour{flex-wrap:wrap}
+.serie-msg{flex-basis:100%;margin-top:4px;font-weight:normal;font-size:16px}
 </style>
 </head>
 <body>
@@ -500,9 +502,9 @@ var RETOURS = [
   { audio: "ok_excellent.mp3", texte: "Excellent !", lecture: true },
   { audio: "ok_impressionne.mp3", texte: "Tu m’impressionnes !", lecture: true }
 ], dernierRetour = -1;
-function retourBon(lecture){
+function retourBon(lecture, sauf){   /* « sauf » = retour à éviter (celui qui commence comme l'audio de fin qui suit) */
   var ok = [], i;
-  for(i = 0; i < RETOURS.length; i++){ if(i!==dernierRetour && (!lecture || RETOURS[i].lecture)) ok.push(i); }
+  for(i = 0; i < RETOURS.length; i++){ if(i!==dernierRetour && RETOURS[i].audio!==sauf && (!lecture || RETOURS[i].lecture)) ok.push(i); }
   if(!ok.length) return null;
   i = ok[Math.floor(Math.random()*ok.length)]; dernierRetour = i;
   jouer([{ audio: RETOURS[i].audio, texte: RETOURS[i].texte, el: null, genre: "cons" }]);
@@ -790,9 +792,9 @@ function ecranManche(){
       suite = sans ? suite+1 : 0;
       opts.forEach(function(x){ x.el.disabled = false; x.el.removeAttribute("aria-disabled"); x.el.classList.remove("choisi","non","pale"); x.el.classList.add(x.bon ? "oui" : "pale"); });
       retour.className = "retour bien";
-      retour.textContent = "★ " + ((E.idx >= N.manches.length-1) ? D.consignes.bravo.texte : (retourBon(false) || D.consignes.bravo.texte));   /* v50 : dernière manche = pas de félicitation parlée (l'audio de fin de niveau suit) */   /* v42 : même phrase à l'écran et à l'oreille, variée d'une manche à l'autre */
+      retour.textContent = "★ " + (retourBon(false, (E.idx >= N.manches.length-1) ? ["ok_bravo.mp3","ok_super.mp3",null][E.niv] : null) || "");   /* v53 : félicitation dite à chaque réussite, dernière comprise */   /* v52 : dernière manche = étoile seule, sans phrase (aucune voix : l'audio de fin de niveau suit) */   /* v50 : dernière manche = pas de félicitation parlée (l'audio de fin de niveau suit) */   /* v42 : même phrase à l'écran et à l'oreille, variée d'une manche à l'autre */
       /* Série réussie : deux manches de suite du premier coup et sans aide -> le niveau suivant s'ouvre (sans obliger à finir celui-ci). */
-      if(sans && suite>=2 && !serie[E.niv] && !dernierNiv){ serie[E.niv] = true; noter(); majStations(E.niv); retour.textContent += " " + T.serie; }
+      if(sans && suite>=2 && !serie[E.niv] && !dernierNiv){ serie[E.niv] = true; noter(); majStations(E.niv); retour.appendChild(el("div", "serie-msg", T.serie)); }   /* v52 : information écrite sur une ligne séparée (pas d'audio) */
       bAide.hidden = true; bVal.hidden = true; bSuiv.hidden = false;
       /* V29 : plus de « Bravo » audio après chaque manche (trop répétitif). Retour visuel ★ ; « Suivant » est actif aussitôt.
          Le bravo audio n'est dit qu'à la fin du niveau (écran de fin de niveau). */
