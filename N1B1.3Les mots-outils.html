@@ -465,9 +465,9 @@ var RETOURS = [
   { audio: "ok_excellent.mp3", texte: "Excellent !", lecture: true },
   { audio: "ok_impressionne.mp3", texte: "Tu m’impressionnes !", lecture: true }
 ], dernierRetour = -1;
-function retourBon(lecture){
+function retourBon(lecture, sauf){   /* « sauf » = retour à éviter (celui qui commence comme l'audio de fin qui suit) */
   var ok = [], i;
-  for(i = 0; i < RETOURS.length; i++){ if(i!==dernierRetour && (!lecture || RETOURS[i].lecture)) ok.push(i); }
+  for(i = 0; i < RETOURS.length; i++){ if(i!==dernierRetour && RETOURS[i].audio!==sauf && (!lecture || RETOURS[i].lecture)) ok.push(i); }
   if(!ok.length) return null;
   i = ok[Math.floor(Math.random()*ok.length)]; dernierRetour = i;
   jouer([{ audio: RETOURS[i].audio, texte: RETOURS[i].texte, el: null, genre: "cons" }]);
@@ -777,7 +777,7 @@ function ecranPhrase(){
       resolu = true; j.tentee = true;
       mots.forEach(function(m){ m.b.disabled = true; m.b.classList.remove("pale"); });
       b.classList.add("trouve");
-      retour.className = "retour bien"; retour.textContent = "★ " + ((E.idx >= total()-1) ? "Tu as trouvé !" : (retourBon(false) || "Tu as trouvé !"));   /* v18 : dernière question = pas de félicitation parlée (audio de fin de niveau ensuite) */
+      retour.className = "retour bien"; retour.textContent = "★ " + (retourBon(false, (E.idx >= total()-1) ? "ok_bravo.mp3" : null) || "");   /* v21 : félicitation dite à chaque réussite, dernière comprise */   /* v20 : dernière question = étoile seule */   /* v18 : dernière question = pas de félicitation parlée (audio de fin de niveau ensuite) */
       bSuiv.hidden = false; try{ bSuiv.focus({ preventScroll: true }); }catch(e){ bSuiv.focus(); }
     } else {
       erreurs++; j.erreurs = erreurs;
