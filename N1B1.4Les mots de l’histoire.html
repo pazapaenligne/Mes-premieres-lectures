@@ -709,7 +709,7 @@ function ecranAccueil(auto){
     var b = bouton("carte-jeu", null, function(){ ecranNiveau(i); });
     var ic = el("span","gros-ic", String(i+1));   /* le chiffre reste affiché, même après le niveau terminé */ ic.setAttribute("aria-hidden","true");
     b.appendChild(ic); b.appendChild(el("strong", null, N.titre));
-    if(!ouvert(i)){ b.disabled = true; b.appendChild(el("span","petit",T.fermeLe)); }
+    if(!ouvert(i)){ b.disabled = true; }
     b.setAttribute("aria-label", T.niveau+" "+(i+1)+" : "+N.titre+(M.f[i] ? " (terminé)" : (ouvert(i) ? "" : " (pas encore ouvert)")));
     g.appendChild(b);
   });
